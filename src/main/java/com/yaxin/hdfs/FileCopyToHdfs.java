@@ -24,11 +24,11 @@ public class FileCopyToHdfs {
 
 	public static void main(String[] args) throws Exception {
 		try {
-			//uploadToHdfs();
+			uploadToHdfs();
 			// deleteFromHdfs();
 			// getDirectoryFromHdfs();
 			//appendToHdfs();
-			readFromHdfs();
+			//readFromHdfs();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -42,8 +42,8 @@ public class FileCopyToHdfs {
 
 	 private static void uploadToHdfs() throws
 		 FileNotFoundException,IOException {
-		 String localSrc = "d://qq.txt";
-		 String dst = "hdfs://192.168.0.104:9000/hdfs/test/qq.txt";
+		 String localSrc = "e://sample_fpgrowth.txt";
+		 String dst = "hdfs://192.168.1.142:9000/data/mllib/sample_fpgrowth.txt";
 		 InputStream in = new BufferedInputStream(new FileInputStream(localSrc));
 		 Configuration conf = new Configuration();
 		
@@ -77,16 +77,26 @@ public class FileCopyToHdfs {
 	 * <property><name>dfs.append.support</name><value>true</value></property>
 	 */
 	private static void appendToHdfs() throws FileNotFoundException, IOException {
-		String dst = "hdfs://192.168.0.104:9000/hdfs/test/qq.txt";
+		String dst = "hdfs://192.168.1.142:9000/itba/OC4_174/2016-08-17/data2.txt";
 		Configuration conf = new Configuration();
+		Path path = new Path(dst);
+		conf.set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER");
+		conf.set("dfs.client.block.write.replace-datanode-on-failure.enable", "true");
 		FileSystem fs = FileSystem.get(URI.create(dst), conf);
-		FSDataOutputStream out = fs.append(new Path(dst));
+		
+		
+		FSDataOutputStream out = null;
+		if(!fs.exists(path)){
+			out = fs.create(path);
+		}else
+		  out = fs.append(new Path(dst));
+		//int readLen = "zhangzk add by hdfs java api".getBytes().length;
 
-		int readLen = "zhangzk add by hdfs java api".getBytes().length;
-
-		while (-1 != readLen) {
-			out.write("zhangzk add by hdfs java api".getBytes(), 0, readLen);
-		}
+	//	while (-1 != readLen) {
+			out.write("zhangzk add by hdfs java api".getBytes());
+			
+			//out.writeChars("中文"+"\n");
+//		}
 		out.close();
 		fs.close();
 	}

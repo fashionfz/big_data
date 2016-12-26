@@ -25,22 +25,30 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParser.Operator;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.QueryBuilder;
 
+import com.google.common.collect.ImmutableClassToInstanceMap.Builder;
+
 public class Lucene {
 
-	public static void main(String[] args) throws IOException{
+	public static void main(String[] args) throws IOException, ParseException{
 		//RAMDirectory directory = new RAMDirectory();  
 		java.nio.file.Path path = java.nio.file.Paths.get("D:\\temp");
 		SimpleFSDirectory directory = new SimpleFSDirectory(path);
-		LocalFile(directory);
+		//LocalFile(directory);
 		
 		
 		
@@ -48,19 +56,41 @@ public class Lucene {
         IndexReader reader = DirectoryReader.open(directory);    
         IndexSearcher searcher = new IndexSearcher(reader);   
         //searcher.setSimilarity(new IKSimilarity());  
-        String keyWords = "2015-11";  
+        String keyWords = "\"2015-11-27 14:39:31\"";  
         MorfologikAnalyzer analyzer = new MorfologikAnalyzer(); 
         QueryBuilder qp = new QueryBuilder(analyzer);
-        Query query = qp.createPhraseQuery("_time", keyWords);
-        //Query query = qp.parse(keyWords);  
         
-        TopDocs topDocs = searcher.search(query, Integer.MAX_VALUE);  
+        org.apache.lucene.search.BooleanQuery.Builder bd = new BooleanQuery.Builder();
+       // Query query = qp.createPhraseQuery("_time", keyWords);
+        
+      //  Query query = qp.createBooleanQuery("_time", keyWords);
+        
+        QueryParser parser =new QueryParser("_time", analyzer);
+        Query query = parser.parse("\"2015-11-27 14:39:31\"");
+        
+        
+        QueryParser parser2 =new QueryParser("level", analyzer);
+        Query query2 = parser2.parse("WARN | ERROR");
+        
+        System.out.println("xxx:"+query2);
+        
+        bd.add(query, Occur.MUST);
+ //       bd.add(query2, Occur.MUST);
+        
+       
+        Query b = Test.create("level=INFO and _content=NORMAL");
+        
+        System.out.println("query == > " + b);
+        
+        Query A = qp.createPhraseQuery("level", "INFO");
+        
+        TopDocs topDocs = searcher.search(b, Integer.MAX_VALUE);  
         ScoreDoc[] ss = topDocs.scoreDocs;
         for(ScoreDoc sd : ss){
         	Document doc = searcher.doc(sd.doc);
-        	System.out.println("_time="+doc.get("level")+"{"+doc.get("_content")+"}");
+        	System.out.println("_time="+doc.get("_time")+"{"+doc.get("_content")+"}");
         }
-       // System.out.println(topDocs.totalHits);  
+        System.out.println(topDocs.totalHits);  
 	}
 	
 	
