@@ -1,6 +1,7 @@
 package com.yaxin.solr;
 
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -9,11 +10,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.hadoop.yarn.util.timeline.TimelineUtils;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.request.CoreAdminRequest;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
@@ -37,14 +42,21 @@ import org.apache.solr.common.params.SolrParams;
 public class Test {
 
 	public static void main(String[] args) {
-		String urlString = "http://172.16.10.92:8080/solr/solr";
-		SolrClient client = new HttpSolrClient.Builder(urlString).build();	
-		//group(client);
-		//getFieldFacet(client, "_dataType");
-		//delete(client);
-		delete(client);
-		
-		//write(client);
+		try{
+			//String urlString = "http://192.168.1.142:8080/solr/solr";
+			//SolrClient client = new HttpSolrClient.Builder(urlString).build();	
+			CloudSolrClient client = new CloudSolrClient.Builder().withZkHost("192.168.1.166:2181").build();
+			client.setDefaultCollection("solr");
+			//group(client);
+			//getFieldFacet(client, "_dataType");
+			//delete(client);
+			//delete(client);
+			
+			write(client);
+			//query(client);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 	
 	
@@ -52,14 +64,14 @@ public class Test {
 		try{
 			SolrQuery query = new SolrQuery();
 			query.setRequestHandler("/select");
-			query.set("q", "_host:OC4_109");
+			query.set("q", "*:*");
 			QueryResponse res = client.query(query);
 			SolrDocumentList docs = res.getResults();
 			for(SolrDocument doc : docs){
-				System.out.println(doc.get("content"));
+				System.out.println(doc.get("id").getClass());
 			}
 		}catch(Exception e){
-			
+			e.printStackTrace();
 		}
 	}
 	
@@ -109,7 +121,7 @@ public class Test {
 	
 	
 	public static void AddField(SolrClient client){
-		Map<String, Object> fieldAttributes = new HashMap();;
+		Map<String, Object> fieldAttributes = new HashMap<>();;
 		
 		
 		fieldAttributes.put("name", "alarmContent");
@@ -148,6 +160,9 @@ public class Test {
 			SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"); 
 			df.setTimeZone(TimeZone.getTimeZone("UTC"));  
 			Calendar cal = Calendar.getInstance();
+			cal.set(Calendar.YEAR, 2016);
+			cal.set(Calendar.MONTH, 11);
+			cal.set(Calendar.DATE, 1);
 			cal.set(Calendar.HOUR_OF_DAY, 0);
 			cal.set(Calendar.MINUTE, 0);
 			cal.set(Calendar.SECOND, 0);
@@ -155,29 +170,76 @@ public class Test {
 			Date end = cal.getTime();
 			cal.add(Calendar.YEAR, -10);
 			Date begin = cal.getTime();
-			//solr.deleteByQuery("_dataType:LogAlarm AND _dateTime:["+df.format(begin)+" TO "+df.format(end)+"]");
-			solr.deleteByQuery("_host:OC4_174_1");
+			System.out.println(df.format(begin)+" TO "+df.format(end));
+			//solr.deleteByQuery("_dateTime:["+df.format(begin)+" TO "+df.format(end)+"]");
+			solr.deleteByQuery("*:*");
 			solr.commit();
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
 	
+	static DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	public static void write(SolrClient solr){
-		Calendar cal = Calendar.getInstance();
-		cal.add(Calendar.DATE, -1);
-		try{
+		int i = 0;
+		List<SolrInputDocument> list = new ArrayList<>(1000);
+		while(i < 1000000000){
+			Calendar cal = Calendar.getInstance();
 			SolrInputDocument document = new SolrInputDocument();
-			document.addField("id", "55219930");
-			document.addField("name", "Gouda cheese wheel");
-			document.addField("weight", 99.0);
+			document.addField("dateTime", cal.getTime().getTime());
+			document.addField("_domain", "OC_4.1");
+			document.addField("resourceId", "CiscoSwitchNIC");
+			document.addField("instanceName", "qzcore");
+			document.addField("subInstanceName", "Gi0/2");
+			document.addField("metricValue", "0.0");
+			document.addField("_dataType", "DevicePerformanceKPI");
+			document.addField("_sourceType", "oc4");
+			document.addField("_host", "oc4_demo");
+			document.addField("content", "{\"dateTime\":"+cal.getTime().getTime()+",\"resourceId\":\"CiscoSwitchNIC\",\"instanceId\":75501,\"metricId\":\"ifBandWidthUtil\",\"instanceName\":\"qzcore\",\"subInstanceName\":\"Gi0/2\",\"metricValue\":0,\"_dataType\":\"DevicePerformanceKPI\",\"subInstanceId\":75522}");
+			document.addField("instanceId", "75501");
+			document.addField("metricId", "ifBandWidthUtil");
 			document.addField("_dateTime", cal.getTime());
-			UpdateResponse response = solr.add(document);
-			// Remember to commit your changes!
-			solr.commit();
-		}catch(Exception e){
-			e.printStackTrace();
+			document.addField("_source", "UDP40000");
+			document.addField("id", UUID.randomUUID().toString());
+			document.addField("subInstanceId", "75522");
+			
+			
+			
+			SolrInputDocument doc2 = new SolrInputDocument();
+			doc2.addField("_domain", "Oracle_11g");
+			doc2.addField("ip", "192.168.1.210");
+			doc2.addField("_source", "Oracle210_alert.log");
+			doc2.addField("_dataType", "LogFile");
+			doc2.addField("_sourceType", "base");
+			doc2.addField("_host", "oracle_210");
+			doc2.addField("content", "\n host_addr='192.168.1.210'>\n <txt>    nt OS err code: 0\n </txt>\n</msg>");
+			doc2.addField("channelID", "Oracle210_alert.log");
+			doc2.addField("_dateTime", cal.getTime());
+			doc2.addField("id", UUID.randomUUID().toString());
+			doc2.addField("subInstanceId", "75522");
+			
+			
+			try {
+				Thread.sleep(1);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+			list.add(document);
+			list.add(doc2);
+			i++;
+			if(i%1000 == 0){
+				System.out.println("commit");
+				try{
+					long b = System.currentTimeMillis();
+					solr.add(list);
+					solr.commit();
+					System.out.println("commit 1000 to solr.. for time : " + (System.currentTimeMillis() - b));
+				}catch(Exception e){
+					e.printStackTrace();
+				}
+				list.clear();
+			}
 		}
 	}
 	

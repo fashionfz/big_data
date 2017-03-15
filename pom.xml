@@ -21,6 +21,13 @@
 		<version>2.7.2</version>
 	</dependency>
 	
+	
+			<dependency>
+			<groupId>com.github.cverges</groupId>
+			<artifactId>expect4j</artifactId>
+			<version>1.9</version>
+		</dependency>
+	
 	<dependency>
 	<groupId>org.apache.hadoop</groupId>
 	<artifactId>hadoop-hdfs</artifactId>
@@ -40,7 +47,11 @@
 		    <version>6.1.0</version>
 		</dependency>
 
-
+	<dependency>
+	    <groupId>org.apache.httpcomponents</groupId>
+	    <artifactId>httpclient</artifactId>
+	    <version>4.5.3</version>
+	</dependency>	
 	
 <dependency>
 	<groupId>org.apache.hbase</groupId>
@@ -103,6 +114,13 @@
     <artifactId>weka-dev</artifactId>
     <version>3.9.0</version>
 </dependency>
+
+
+		<dependency>
+			<groupId>com.sshtools</groupId>
+			<artifactId>j2ssh-maverick</artifactId>
+			<version>1.5.1</version>
+		</dependency>
 
   </dependencies>
   
